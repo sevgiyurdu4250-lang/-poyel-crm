@@ -1,0 +1,93 @@
+
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Poyel CRM">
+<link rel="manifest" href="manifest.json">
+<title>Poyel CRM</title>
+<style>
+body{margin:0;background:#0f1115;color:#fff;font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;padding:18px 18px 92px}
+h1{font-size:34px;margin:18px 0 2px}.sub{color:#99a3b5;margin-bottom:20px}
+.card{background:#171a22;border:1px solid #333a4a;border-radius:22px;padding:18px;margin:15px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:#232737;border-radius:18px;padding:18px}.stat b{font-size:32px}.stat div{color:#a4acbb}
+input,select,textarea,button{width:100%;box-sizing:border-box;border-radius:15px;border:1px solid #333a4a;background:#10131a;color:#fff;padding:15px;font-size:17px;margin:7px 0}
+button{background:#f2c94c;color:#111;font-weight:900;border:0}.dark{background:#232737;color:#fff}
+.hidden{display:none}.item{background:#10131a;border:1px solid #333a4a;border-radius:18px;padding:14px;margin:12px 0}.small{color:#a4acbb;line-height:1.5}
+.badge{display:inline-block;background:#f2c94c;color:#111;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.actions a{background:#232737;color:#fff;text-decoration:none;text-align:center;border-radius:13px;padding:12px 6px;font-weight:800}
+.nav{position:fixed;left:0;right:0;bottom:0;background:#090b10;border-top:1px solid #333a4a;display:grid;grid-template-columns:repeat(4,1fr);padding:8px}.nav button{background:transparent;color:#aaa;font-size:12px;padding:8px;margin:0}.nav button.on{color:#f2c94c}
+</style>
+</head>
+<body>
+<h1>📋 Poyel CRM</h1><div class="sub">Poyel DTF Tekstil müşteri takip sistemi</div>
+
+<section id="home">
+<div class="card"><h2>📊 Özet</h2><div class="grid">
+<div class="stat"><b id="total">0</b><div>Toplam müşteri</div></div>
+<div class="stat"><b id="today">0</b><div>Bugün takip</div></div>
+<div class="stat"><b id="priced">0</b><div>Fiyat verilen</div></div>
+<div class="stat"><b id="orders">0</b><div>Sipariş alınan</div></div>
+</div></div>
+<div class="card"><h2>⏰ Bugün tekrar yazılacaklar</h2><div id="dueBox" class="small">Bugün takip yok.</div></div>
+<div class="card"><button onclick="show('add')">+ Yeni müşteri ekle</button></div>
+</section>
+
+<section id="add" class="hidden">
+<div class="card"><h2>➕ Yeni Müşteri</h2>
+<input id="name" placeholder="İşletme adı">
+<input id="sector" placeholder="Sektör">
+<input id="phone" placeholder="Telefon">
+<input id="instagram" placeholder="Instagram">
+<select id="status"><option>Mesaj Atıldı</option><option>Cevap Bekleniyor</option><option>Fiyat Verildi</option><option>Tekrar Yazılacak</option><option>Sipariş Alındı</option><option>Olmadı</option></select>
+<input id="follow" type="date">
+<textarea id="note" placeholder="Not"></textarea>
+<button onclick="addCustomer()">Kaydet</button>
+</div></section>
+
+<section id="listSec" class="hidden">
+<div class="card"><h2>👥 Müşteriler</h2><input id="search" oninput="render()" placeholder="Ara"><div id="list"></div></div>
+</section>
+
+<section id="tools" class="hidden">
+<div class="card"><h2>💬 Hazır mesaj</h2>
+<textarea id="template">Merhaba, hayırlı işler. Poyel DTF Tekstil olarak işletmelere logolu iş elbisesi, tişört, polo yaka, önlük ve yelek hazırlıyoruz. İsterseniz logonuza özel ücretsiz örnek görsel hazırlayabiliriz.</textarea>
+<button onclick="navigator.clipboard.writeText(document.getElementById('template').value);alert('Kopyalandı knk')">Mesajı kopyala</button></div>
+<div class="card"><h2>💾 Yedek</h2><button onclick="exportData()">Yedek al</button><input type="file" onchange="importData(event)"></div>
+</section>
+
+<div class="nav">
+<button id="n-home" class="on" onclick="show('home')">🏠<br>Ana</button>
+<button id="n-add" onclick="show('add')">➕<br>Ekle</button>
+<button id="n-listSec" onclick="show('listSec')">👥<br>Liste</button>
+<button id="n-tools" onclick="show('tools')">🧰<br>Araç</button>
+</div>
+
+<script>
+let data=JSON.parse(localStorage.getItem("poyelcrm")||"[]");
+function $(id){return document.getElementById(id)}
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function save(){localStorage.setItem("poyelcrm",JSON.stringify(data));render()}
+function show(id){["home","add","listSec","tools"].forEach(x=>$(x).classList.add("hidden"));$(id).classList.remove("hidden");["n-home","n-add","n-listSec","n-tools"].forEach(x=>$(x).classList.remove("on"));$("n-"+id).classList.add("on");render()}
+function clean(p){return (p||"").replace(/\D/g,"").replace(/^0/,"90")}
+function addCustomer(){
+let c={id:Date.now(),date:new Date().toLocaleDateString("tr-TR"),name:$("name").value.trim(),sector:$("sector").value.trim(),phone:$("phone").value.trim(),instagram:$("instagram").value.trim(),status:$("status").value,follow:$("follow").value,note:$("note").value.trim()};
+if(!c.name){alert("İşletme adı yaz knk");return}
+data.unshift(c);["name","sector","phone","instagram","follow","note"].forEach(id=>$(id).value="");$("status").value="Mesaj Atıldı";save();show("listSec")}
+function del(id){if(confirm("Silelim mi knk?")){data=data.filter(c=>c.id!==id);save()}}
+function render(){
+$("total").textContent=data.length;$("priced").textContent=data.filter(c=>c.status==="Fiyat Verildi").length;$("orders").textContent=data.filter(c=>c.status==="Sipariş Alındı").length;
+let due=data.filter(c=>c.follow&&c.follow<=todayISO()&&c.status!=="Sipariş Alındı"&&c.status!=="Olmadı");$("today").textContent=due.length;$("dueBox").innerHTML=due.length?due.map(c=>"<b>"+c.name+"</b> - "+c.status+"<br>").join(""):"Bugün takip yok.";
+let q=($("search")?.value||"").toLowerCase();let arr=data.filter(c=>Object.values(c).join(" ").toLowerCase().includes(q));
+$("list").innerHTML=arr.length?arr.map(c=>{let p=clean(c.phone),ins=(c.instagram||"").replace("@","");return `<div class="item"><b>${c.name}</b> <span class="badge">${c.status}</span><div class="small">${c.sector||"-"}<br>Tel: ${c.phone||"-"}<br>Instagram: ${c.instagram||"-"}<br>Takip: ${c.follow||"-"}<br>Not: ${c.note||"-"}<br>Tarih: ${c.date}</div><div class="actions"><a href="${p?'tel:'+p:'#'}">Ara</a><a href="${p?'https://wa.me/'+p:'#'}">WhatsApp</a><a href="${ins?'https://instagram.com/'+ins:'#'}">Instagram</a></div><button class="dark" onclick="del(${c.id})">Sil</button></div>`}).join(""):"<div class='small'>Henüz müşteri yok knk.</div>"
+}
+function exportData(){let b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="poyel-crm-yedek.json";a.click()}
+function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{data=JSON.parse(r.result);save();alert("Yedek yüklendi knk")};r.readAsText(f)}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+render();
+</script>
+</body>
+</html>
